@@ -1,0 +1,100 @@
+
+###############################
+Update Snapshop data Page Data
+###############################
+
+This is a MIRROR version of snapshot data page.
+
++++++++++
+Scripts
++++++++++
+
+-----------
+../snap.cgi
+-----------
+a cgi script to display current spacecraft conditions.
+
+input:  
+    CRMsummary.dat -> /data/mta_www/MIRROR/OPS/CRM3/CRMsummary.dat
+    chandra.snapshot    --- most recent data 
+    snarc.<yyyy><ddd>   --- past data
+
+output:
+    https://cxc.cfa.harvard.edu/mta_days/MIRROR/Snap/snap.cgi?action=Latest
+
+------------
+run-acorn.pl
+------------
+check if acorn process is running.
+this is specifically for the acorn process with:
+
+    $acorn_exe -u $UDP_port -C $msids -e $filesize -nv
+
+    where:  $acorn_exe  ---- /home/ascds/DS.release/bin/acorn
+            $UDP_port   ---- 11512  (for colossus-v)
+            $msids      ---- chandra-msids.list
+            $filesize   ---- 500
+
+Enviroment Setting
+------------------
+    ASCDS_CONFIG_MTA_DATA
+    IPCL_DIR
+    LD_LIBRARY_PATH
+
+input:
+------
+data port   ---- 11512 on colossus-v
+    Note: The data are coming in only when chandra is in comm pass.
+
+racorn.pid  ---- the file contains information when the last acorn process
+                 is started. if acorn is dead, this file is updated
+
+output:
+--------
+in /data/mta/www/MIRROR/Snap/Exc/
+    chandraACA_<timestamp>.tl
+    chandraCCDM_<timestamp>.tl
+    chandraEPHIN_<timestamp>.tl
+    chandraEPS_<timestamp>.tl
+    chandraEPS-<timestamp>.tl
+    chandraIRU_<timestamp>.tl
+    chandraNORM-SFMT_<timestamp>.tl
+    chandraPCAD_<timestamp>.tl
+    chandraSI_<timestamp>.tl
+    chandraSIM-<timestamp>.tl
+    chandraTEL_<timestamp>.tl
+
+cron job:   
+---------
+mta @colossus-v
+0,30 * * * * cd /data/mta/www/MIRROR/Snap/Exc/; /data/mta/www/MIRROR/Snap/Scripts/run-acorn.pl > $HOME/Logs/RT/run-acorn_bu.cron 2>&1
+
+--------
+tlogr.pl
+--------
+write the snapshot to a daily archive file if it has changed
+
+input:
+------
+    see trace log files above 
+
+output:
+-------
+in /data/mta/www/MIRROR/Snap/
+    chandra.snapshot    --- most recent data 
+    snarc.<yyyy><ddd>   --- past data
+
+perl libraries
+--------------
+in /data/mta/www/MIRROR/Snap
+    snap.pm
+    snap_format.pm
+    comps.pm
+in /home/mta/Snap/
+    check_state.pm
+
+cron job:   
+---------
+    colossus-v / mta
+* * * * *    cd /data/mta/www/MIRROR/Snap/Exc/; /data/mta/www/MIRROR/Snap/Scripts/tlogr.pl  >> $HOME/Logs/RT/tlogr_bu.cron 2>&1
+1 0 * * *    cd /data/mta/www/MIRROR/Snap/Exc/; /data/mta/www/MIRROR/Snap/Scripts/snarcl.pl    >  $HOME/Logs/RT/snarcl_bu.cron 2>&1
